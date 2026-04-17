@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IMDb Redesign — UX Case Study · Hisham Diab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:     #3A3A3A;
+  --black-deep:#2A2A2A;
+  --black-ink: #1E1E1E;
+  --void:      #141414;
+  --white:     #F2F2F2;
+  --white-dim: #D0D0D0;
+  --white-mute:#A8A8A8;
+  --gray-h:    #525252;
+  --gray-l:    #8A8A8A;
+  --gold:      #C8A96E;
+  --gold-dim:  #A8893E;
+  --b1: rgba(242,242,242,0.05);
+  --b2: rgba(242,242,242,0.09);
+  --b3: rgba(242,242,242,0.16);
+  --b-gold: rgba(200,169,110,0.2);
+  --font-d: 'Cormorant Garamond', Georgia, serif;
+  --font-b: 'Outfit', sans-serif;
+  --font-m: 'DM Mono', monospace;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;font-size:16px;}
+body{background:var(--void);color:var(--white);font-family:var(--font-b);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+img{display:block;object-fit:cover;}
+a{text-decoration:none;color:inherit;}
+::-webkit-scrollbar{width:2px;}
+::-webkit-scrollbar-track{background:var(--void);}
+::-webkit-scrollbar-thumb{background:var(--gray-h);border-radius:2px;}
+
+/* ─── PROGRESS BAR ─── */
+#progress{position:fixed;top:0;left:0;height:2px;background:var(--white);z-index:9999;width:0%;transition:width 0.1s;}
+
+/* ─── CURSOR ─── */
+*{cursor:none!important;}
+#cur{width:8px;height:8px;border-radius:50%;background:var(--white);position:fixed;top:0;left:0;z-index:9998;pointer-events:none;mix-blend-mode:difference;transition:transform 0.12s;}
+#cur-r{width:32px;height:32px;border-radius:50%;border:1px solid rgba(242,242,242,0.35);position:fixed;top:0;left:0;z-index:9997;pointer-events:none;}
+
+/* ─── TOP NAV ─── */
+#topnav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 48px;
+  background:rgba(20,20,20,0.92);
+  backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--b1);
+  transition:all 0.3s;
+}
+.nav-brand{display:flex;align-items:center;gap:14px;}
+.nav-brand-name{font-family:var(--font-d);font-size:1.1rem;font-weight:400;letter-spacing:0.02em;color:var(--white);}
+.nav-brand-sep{width:1px;height:18px;background:var(--b3);}
+.nav-brand-role{font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gray-l);}
+.nav-links{display:flex;gap:0;}
+.nav-link{
+  padding:0 16px;height:56px;display:flex;align-items:center;
+  font-size:0.75rem;color:var(--gray-l);letter-spacing:0.06em;
+  border-bottom:2px solid transparent;transition:all 0.2s;
+}
+.nav-link:hover{color:var(--white);}
+.nav-link.active{color:var(--white);border-bottom-color:var(--white);}
+.nav-cta{
+  height:34px;padding:0 18px;
+  background:var(--white);color:var(--void);
+  border-radius:4px;font-size:0.72rem;font-weight:600;letter-spacing:0.06em;
+  transition:all 0.2s;
+}
+.nav-cta:hover{background:var(--white-dim);}
+
+/* ─── HERO ─── */
+.cs-hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:0 0 0;
+  position:relative;overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 70% 60% at 70% 30%, rgba(82,82,82,0.08), transparent),
+    radial-gradient(ellipse 40% 40% at 20% 80%, rgba(200,169,110,0.04), transparent);
+}
+/* Animated grid lines */
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(var(--b1) 1px, transparent 1px),
+    linear-gradient(90deg, var(--b1) 1px, transparent 1px);
+  background-size:80px 80px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+}
+.hero-content{
+  position:relative;z-index:2;
+  padding:160px 72px 80px;
+  max-width:1200px;
+}
+.hero-eyebrow{
+  display:flex;align-items:center;gap:12px;margin-bottom:28px;
+}
+.hero-eyebrow-line{width:40px;height:1px;background:var(--gold);}
+.hero-eyebrow-text{font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);}
+.hero-title{
+  font-family:var(--font-d);
+  font-size:clamp(3.5rem,9vw,9rem);
+  font-weight:300;line-height:0.9;
+  letter-spacing:-0.03em;
+  margin-bottom:12px;
+}
+.hero-title em{font-style:italic;color:var(--white-dim);}
+.hero-subtitle{
+  font-family:var(--font-d);
+  font-size:clamp(1.2rem,3vw,2.2rem);
+  font-weight:300;font-style:italic;
+  color:var(--gray-l);margin-bottom:48px;
+}
+.hero-meta-row{
+  display:flex;gap:40px;align-items:center;
+  padding-top:32px;border-top:1px solid var(--b2);
+}
+.hero-meta-item{}
+.hero-meta-label{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gray-h);margin-bottom:4px;}
+.hero-meta-val{font-size:0.85rem;color:var(--white-dim);font-weight:300;}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;}
+.hero-tag{
+  font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;
+  border:1px solid var(--b3);border-radius:3px;
+  padding:5px 12px;color:var(--gray-l);
+}
+.hero-scroll{
+  position:absolute;right:72px;bottom:80px;z-index:2;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gray-h);
+}
+.hero-scroll-line{width:1px;height:48px;background:linear-gradient(to bottom,var(--gray-h),transparent);animation:scroll-line 2s ease infinite;}
+@keyframes scroll-line{0%,100%{transform:scaleY(1);opacity:1}50%{transform:scaleY(0.5);opacity:0.4}}
+
+/* ─── SECTION SYSTEM ─── */
+.cs-section{padding:100px 72px;border-top:1px solid var(--b1);}
+.cs-section-alt{background:var(--black-ink);}
+.cs-section-dark{background:rgba(20,20,20,0.5);}
+
+/* Section header */
+.s-header{display:grid;grid-template-columns:80px 1fr;gap:32px;margin-bottom:64px;align-items:start;}
+.s-number{font-family:var(--font-m);font-size:0.62rem;letter-spacing:0.2em;color:var(--gray-h);padding-top:6px;}
+.s-head-right{}
+.s-eyebrow{font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.s-title{font-family:var(--font-d);font-size:clamp(2rem,4vw,3.8rem);font-weight:300;line-height:0.95;letter-spacing:-0.02em;}
+.s-title em{font-style:italic;color:var(--white-dim);}
+.s-lead{font-size:0.92rem;color:var(--gray-l);max-width:560px;margin-top:16px;line-height:1.8;font-weight:300;}
+
+/* ─── OVERVIEW CARDS ─── */
+.overview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px;}
+.ov-card{
+  background:var(--black-deep);border:1px solid var(--b2);
+  border-radius:12px;padding:28px;
+  position:relative;overflow:hidden;
+  transition:border-color 0.3s;
+}
+.ov-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--b3),transparent);opacity:0;transition:opacity 0.3s;}
+.ov-card:hover{border-color:var(--b3);}
+.ov-card:hover::before{opacity:1;}
+.ov-num{font-family:var(--font-d);font-size:3rem;font-weight:300;color:var(--white);line-height:1;margin-bottom:8px;}
+.ov-unit{font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray-h);}
+.ov-label{font-size:0.82rem;color:var(--white-dim);margin-top:8px;font-weight:300;}
+
+/* ─── PROBLEM SECTION ─── */
+.problem-list{display:flex;flex-direction:column;gap:0;}
+.problem-item{
+  display:grid;grid-template-columns:200px 1fr 120px;gap:32px;
+  padding:28px 0;border-bottom:1px solid var(--b1);
+  align-items:start;transition:all 0.2s;
+}
+.problem-item:hover{background:rgba(242,242,242,0.01);padding-left:8px;}
+.problem-sev{
+  font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.12em;
+  padding:4px 10px;border-radius:3px;width:fit-content;margin-top:4px;
+}
+.sev-crit{background:rgba(220,80,80,0.12);color:#E07070;border:1px solid rgba(220,80,80,0.2);}
+.sev-mod{background:rgba(200,169,110,0.1);color:var(--gold);border:1px solid var(--b-gold);}
+.sev-low{background:rgba(80,180,120,0.1);color:#70C090;border:1px solid rgba(80,180,120,0.2);}
+.problem-body h3{font-family:var(--font-d);font-size:1.3rem;font-weight:400;margin-bottom:8px;}
+.problem-body p{font-size:0.82rem;color:var(--gray-l);line-height:1.75;font-weight:300;}
+.problem-ux-law{font-family:var(--font-m);font-size:0.6rem;color:var(--gray-h);letter-spacing:0.1em;padding-top:4px;}
+
+/* ─── RESEARCH SECTION ─── */
+.research-two-col{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;}
+.insight-card{
+  background:var(--black-deep);border:1px solid var(--b2);
+  border-radius:12px;padding:24px;margin-bottom:12px;
+}
+.insight-icon{font-size:1.6rem;margin-bottom:12px;}
+.insight-title{font-size:0.85rem;font-weight:600;margin-bottom:6px;}
+.insight-body{font-size:0.78rem;color:var(--gray-l);line-height:1.7;font-weight:300;}
+
+/* Competitive Audit Table */
+.audit-table{width:100%;border-collapse:separate;border-spacing:0;}
+.audit-table th{
+  padding:10px 14px;text-align:center;
+  font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--gray-h);background:var(--black-deep);
+}
+.audit-table th:first-child{text-align:left;}
+.audit-table th.gold-col{color:var(--gold);}
+.audit-table td{
+  padding:11px 14px;font-size:0.78rem;
+  border-bottom:1px solid var(--b1);text-align:center;
+  transition:background 0.15s;
+}
+.audit-table tr:hover td{background:rgba(242,242,242,0.01);}
+.audit-table td:first-child{text-align:left;color:var(--white-dim);font-weight:400;}
+.audit-table td.gold-col{font-weight:600;}
+.audit-table .t-yes{color:#70C090;}
+.audit-table .t-no{color:var(--gray-h);}
+.audit-table .t-half{color:var(--gold);}
+.audit-wrap{background:var(--black-deep);border:1px solid var(--b2);border-radius:12px;overflow:hidden;}
+
+/* ─── PERSONAS ─── */
+.personas-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.persona-card{
+  background:var(--black-deep);border:1px solid var(--b2);
+  border-radius:16px;overflow:hidden;
+  transition:border-color 0.3s,transform 0.3s;
+}
+.persona-card:hover{border-color:var(--b3);transform:translateY(-4px);}
+.persona-img{height:200px;position:relative;overflow:hidden;}
+.persona-img img{width:100%;height:100%;object-fit:cover;filter:brightness(0.6) contrast(1.1) saturate(0.5);}
+.persona-img-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(26,26,26,1) 0%,transparent 60%);}
+.persona-img-info{position:absolute;bottom:0;left:0;right:0;padding:18px;}
+.persona-name{font-family:var(--font-d);font-size:1.4rem;font-weight:400;}
+.persona-role{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray-l);margin-top:2px;}
+.persona-body{padding:20px;}
+.persona-quote{
+  font-family:var(--font-d);font-size:0.92rem;font-style:italic;
+  color:var(--white-dim);line-height:1.65;
+  border-left:2px solid var(--gray-h);padding-left:14px;
+  margin-bottom:16px;font-weight:300;
+}
+.persona-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;}
+.p-chip{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.08em;padding:3px 9px;border-radius:3px;background:var(--black);border:1px solid var(--b2);color:var(--gray-l);}
+.persona-goals h4,.persona-pains h4{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:7px;}
+.persona-goals h4{color:#70C090;}
+.persona-pains h4{color:#E07070;}
+.persona-list{list-style:none;margin-bottom:12px;}
+.persona-list li{font-size:0.75rem;color:var(--gray-l);padding:3px 0;font-weight:300;}
+.persona-goals .persona-list li::before{content:'→ ';color:#70C090;}
+.persona-pains .persona-list li::before{content:'! ';color:#E07070;}
+
+/* ─── JOURNEY MAP ─── */
+.journey-wrap{overflow-x:auto;margin-top:12px;}
+.journey-table{min-width:1000px;width:100%;border-collapse:separate;border-spacing:10px;}
+.journey-table th{
+  background:var(--black-deep);border:1px solid var(--b2);
+  border-radius:8px;padding:12px 14px;
+  font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.2em;
+  text-transform:uppercase;color:var(--gold);text-align:center;
+}
+.journey-table td{
+  background:var(--black-deep);border:1px solid var(--b1);
+  border-radius:8px;padding:12px;
+  font-size:0.74rem;color:var(--gray-l);line-height:1.55;
+  vertical-align:top;
+}
+.journey-table td.stage-col{color:var(--white);font-weight:500;font-size:0.78rem;}
+.j-pain{background:rgba(220,80,80,0.07);border-left:2px solid #E07070;padding:5px 8px;border-radius:0 4px 4px 0;margin:3px 0;font-size:0.7rem;}
+.j-opp{background:rgba(200,169,110,0.07);border-left:2px solid var(--gold);padding:5px 8px;border-radius:0 4px 4px 0;margin:3px 0;font-size:0.7rem;color:var(--gold);}
+.j-emo{display:flex;gap:3px;justify-content:center;margin-top:6px;}
+.j-dot{width:7px;height:7px;border-radius:50%;}
+.j-great{background:#70C090;}
+.j-ok{background:var(--gold);}
+.j-bad{background:#E07070;}
+
+/* ─── SITE MAP ─── */
+.sitemap-wrap{font-family:var(--font-m);}
+.sitemap-root{text-align:center;margin-bottom:28px;}
+.sitemap-root-node{
+  display:inline-block;background:var(--white);color:var(--void);
+  font-size:0.72rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;
+  padding:10px 24px;border-radius:4px;
+}
+.sitemap-branches{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
+.sitemap-branch{}
+.sitemap-node-1{
+  background:var(--black-deep);border:1px solid var(--b3);
+  border-radius:8px;padding:9px 12px;
+  font-size:0.68rem;color:var(--white);
+  text-align:center;margin-bottom:6px;font-weight:500;letter-spacing:0.05em;
+}
+.sitemap-node-2{
+  background:var(--black);border:1px solid var(--b1);
+  border-radius:5px;padding:6px 10px;
+  font-size:0.6rem;color:var(--gray-l);margin-bottom:3px;
+  letter-spacing:0.04em;
+}
+.sitemap-node-2::before{content:'└ ';color:var(--gray-h);}
+
+/* ─── USER FLOWS ─── */
+.flow-block{
+  background:var(--black-deep);border:1px solid var(--b2);
+  border-radius:12px;padding:24px;margin-bottom:16px;
+}
+.flow-label{font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:18px;}
+.flow-steps{display:flex;align-items:center;gap:0;flex-wrap:wrap;}
+.flow-node{
+  background:var(--black);border:1px solid var(--b2);
+  border-radius:8px;padding:10px 14px;text-align:center;
+  min-width:100px;font-size:0.72rem;color:var(--white);font-weight:400;flex-shrink:0;
+}
+.flow-node.start{border-color:#70C090;color:#70C090;background:rgba(80,180,120,0.06);}
+.flow-node.end{border-color:var(--white);color:var(--white);background:rgba(242,242,242,0.05);}
+.flow-node.decision{border-color:var(--gold);color:var(--gold);background:rgba(200,169,110,0.05);}
+.flow-node sub{display:block;font-size:0.58rem;color:var(--gray-h);margin-top:2px;font-family:var(--font-m);}
+.flow-arrow{color:var(--gray-h);font-size:1rem;padding:0 6px;flex-shrink:0;}
+
+/* ─── DESIGN DECISIONS ─── */
+.decisions-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.decision-card{
+  background:var(--black-deep);border:1px solid var(--b2);
+  border-radius:12px;padding:24px;
+  transition:border-color 0.25s;
+}
+.decision-card:hover{border-color:var(--b3);}
+.decision-type{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.decision-card h3{font-family:var(--font-d);font-size:1.2rem;font-weight:400;margin-bottom:8px;}
+.decision-card p{font-size:0.78rem;color:var(--gray-l);line-height:1.7;font-weight:300;}
+.decision-law{
+  display:inline-block;margin-top:12px;
+  font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.1em;
+  padding:3px 9px;border:1px solid var(--b2);border-radius:3px;color:var(--gray-h);
+}
+
+/* ─── FEATURE CARDS ─── */
+.features-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.feature-card{
+  display:grid;grid-template-columns:60px 1fr;gap:20px;
+  background:var(--black-deep);border:1px solid var(--b2);
+  border-radius:12px;padding:22px;align-items:start;
+  transition:all 0.25s;
+}
+.feature-card:hover{border-color:var(--b3);transform:translateX(3px);}
+.feature-icon{
+  width:48px;height:48px;border-radius:8px;
+  background:var(--black);border:1px solid var(--b2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;flex-shrink:0;
+}
+.feature-type{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+.feature-card h3{font-size:0.88rem;font-weight:500;margin-bottom:5px;}
+.feature-card p{font-size:0.76rem;color:var(--gray-l);line-height:1.65;font-weight:300;}
+
+/* ─── DESIGN SYSTEM ─── */
+.ds-colors{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap;}
+.ds-color{border-radius:8px;overflow:hidden;width:100px;}
+.ds-color-swatch{height:64px;}
+.ds-color-info{background:var(--black-deep);padding:8px;border:1px solid var(--b1);border-top:none;}
+.ds-color-hex{font-family:var(--font-m);font-size:0.6rem;color:var(--white-dim);}
+.ds-color-name{font-size:0.64rem;color:var(--gray-l);margin-top:2px;}
+
+.ds-type{margin-bottom:32px;}
+.ds-type-sample{margin-bottom:16px;}
+.ds-type-sample .sample-text{line-height:1;}
+.ds-type-meta{font-family:var(--font-m);font-size:0.58rem;color:var(--gray-h);margin-top:4px;letter-spacing:0.1em;}
+
+.ds-components{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.ds-comp{background:var(--black-deep);border:1px solid var(--b2);border-radius:12px;padding:20px;}
+.ds-comp-label{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gray-h);margin-bottom:14px;}
+
+/* Wireframe Mockups (SVG-style) */
+.wireframe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+.wireframe-item{background:var(--black-deep);border:1px solid var(--b2);border-radius:10px;overflow:hidden;}
+.wireframe-label{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray-h);padding:10px 12px;border-bottom:1px solid var(--b1);}
+.wireframe-body{padding:0;aspect-ratio:16/10;background:var(--black);position:relative;overflow:hidden;}
+/* Wireframe elements */
+.wf{position:absolute;background:var(--black-deep);border-radius:2px;}
+.wf-text{background:var(--gray-h);opacity:0.3;height:6px;border-radius:1px;}
+.wf-img{background:var(--black);border:1px solid var(--b2);}
+.wf-card{background:var(--black-deep);border:1px solid var(--b2);border-radius:4px;}
+.wf-btn{background:var(--white);opacity:0.15;border-radius:3px;height:10px;}
+.wf-nav{background:rgba(30,30,30,0.9);border-bottom:1px solid var(--b2);}
+
+/* ─── METRICS ─── */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.metric-card{background:var(--black-deep);border:1px solid var(--b2);border-radius:12px;padding:24px;text-align:center;}
+.metric-num{font-family:var(--font-d);font-size:2.8rem;font-weight:300;line-height:1;}
+.metric-unit{font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.1em;color:var(--gray-h);display:block;margin-top:4px;}
+.metric-label{font-size:0.78rem;color:var(--white-dim);margin-top:10px;font-weight:300;}
+.metric-desc{font-size:0.68rem;color:var(--gray-h);margin-top:4px;font-family:var(--font-m);}
+
+/* ─── LEARNINGS ─── */
+.learning-list{display:flex;flex-direction:column;gap:0;}
+.learning-item{
+  display:grid;grid-template-columns:60px 1fr;gap:24px;
+  padding:24px 0;border-bottom:1px solid var(--b1);
+  align-items:start;
+}
+.learning-n{font-family:var(--font-d);font-size:2.4rem;font-weight:300;color:var(--black);-webkit-text-stroke:1px var(--gray-h);line-height:1;padding-top:4px;}
+.learning-body h3{font-family:var(--font-d);font-size:1.15rem;font-weight:400;margin-bottom:6px;}
+.learning-body p{font-size:0.8rem;color:var(--gray-l);line-height:1.75;font-weight:300;}
+
+/* ─── DESIGNER SECTION ─── */
+.designer-section{
+  display:grid;grid-template-columns:300px 1fr;gap:64px;
+  align-items:start;
+}
+.designer-left{position:sticky;top:80px;}
+.designer-avatar{
+  width:200px;height:200px;border-radius:16px;overflow:hidden;
+  border:1px solid var(--b2);margin-bottom:24px;
+}
+.designer-avatar img{width:100%;height:100%;object-fit:cover;filter:grayscale(20%);}
+.designer-name{font-family:var(--font-d);font-size:1.8rem;font-weight:300;margin-bottom:4px;}
+.designer-title{font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
+.designer-bio{font-size:0.82rem;color:var(--gray-l);line-height:1.75;font-weight:300;margin-bottom:20px;}
+.designer-links{display:flex;flex-direction:column;gap:6px;}
+.designer-link{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--font-m);font-size:0.65rem;letter-spacing:0.08em;
+  color:var(--gray-l);padding:7px 0;border-bottom:1px solid var(--b1);
+  transition:color 0.2s;
+}
+.designer-link:hover{color:var(--white);}
+.designer-link-icon{width:18px;text-align:center;color:var(--gray-h);}
+
+.designer-right{}
+.skills-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;}
+.skill-card{background:var(--black-deep);border:1px solid var(--b2);border-radius:10px;padding:18px;}
+.skill-cat{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.skill-item{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.skill-name{font-size:0.78rem;color:var(--white-dim);width:120px;flex-shrink:0;font-weight:300;}
+.skill-bar-bg{flex:1;height:3px;background:var(--black);border-radius:2px;overflow:hidden;}
+.skill-bar-fill{height:100%;background:var(--white-dim);border-radius:2px;transition:width 1.5s cubic-bezier(0.16,1,0.3,1);}
+.cert-card{
+  background:var(--black-deep);border:1px solid var(--b-gold);
+  border-radius:10px;padding:18px;display:flex;gap:14px;align-items:center;margin-bottom:12px;
+}
+.cert-icon{font-size:1.8rem;flex-shrink:0;}
+.cert-title{font-size:0.85rem;font-weight:500;margin-bottom:3px;}
+.cert-meta{font-family:var(--font-m);font-size:0.6rem;color:var(--gold);letter-spacing:0.08em;}
+
+/* ─── NEXT PROJECT TEASER ─── */
+.next-project{
+  padding:80px 72px;
+  border-top:1px solid var(--b1);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--black-ink);
+}
+.next-label{font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--gray-h);margin-bottom:8px;}
+.next-title{font-family:var(--font-d);font-size:2.5rem;font-weight:300;letter-spacing:-0.02em;}
+.next-title em{font-style:italic;color:var(--white-dim);}
+.next-btn{
+  height:48px;padding:0 28px;
+  background:var(--white);color:var(--void);
+  border-radius:4px;font-size:0.78rem;font-weight:600;letter-spacing:0.08em;
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+  transition:all 0.2s;
+}
+.next-btn:hover{background:var(--white-dim);}
+
+/* ─── FOOTER ─── */
+footer{
+  padding:48px 72px;border-top:1px solid var(--b1);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.footer-brand{font-family:var(--font-d);font-size:1.1rem;font-weight:300;color:var(--gray-l);}
+.footer-copy{font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.12em;color:var(--gray-h);}
+
+/* ─── SCROLL REVEAL ─── */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity 0.7s ease,transform 0.7s ease;}
+.reveal.in{opacity:1;transform:translateY(0);}
+.reveal-delay-1{transition-delay:0.1s;}
+.reveal-delay-2{transition-delay:0.2s;}
+.reveal-delay-3{transition-delay:0.3s;}
+
+/* ─── QUOTE BLOCK ─── */
+.quote-block{
+  border-left:3px solid var(--white);padding:24px 32px;
+  margin:40px 0;
+  background:rgba(242,242,242,0.02);border-radius:0 8px 8px 0;
+}
+.quote-text{font-family:var(--font-d);font-size:1.5rem;font-weight:300;font-style:italic;line-height:1.5;color:var(--white-dim);margin-bottom:10px;}
+.quote-attr{font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gray-h);}
+
+/* ─── TWO COL TEXT ─── */
+.two-col-text{display:grid;grid-template-columns:1fr 1fr;gap:48px;}
+.col-text p{font-size:0.86rem;color:var(--gray-l);line-height:1.85;font-weight:300;}
+.col-text p+p{margin-top:16px;}
+
+/* ─── INLINE STATS ─── */
+.inline-stats{display:flex;gap:48px;padding:32px 0;border-top:1px solid var(--b1);border-bottom:1px solid var(--b1);margin:32px 0;}
+.inline-stat .is-num{font-family:var(--font-d);font-size:2.4rem;font-weight:300;color:var(--white);line-height:1;}
+.inline-stat .is-lbl{font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray-h);margin-top:4px;}
+</style>
+</head>
+<body>
+
+<!-- Progress bar -->
+<div id="progress"></div>
+<!-- Cursor -->
+<div id="cur"></div>
+<div id="cur-r"></div>
+
+<!-- ══════════════════════════════════
+     TOP NAV
+══════════════════════════════════ -->
+<nav id="topnav">
+  <div class="nav-brand">
+    <div class="nav-brand-name">Hisham Diab</div>
+    <div class="nav-brand-sep"></div>
+    <div class="nav-brand-role">Junior UX/UI Designer</div>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link active" href="#overview">Overview</a>
+    <a class="nav-link" href="#research">Research</a>
+    <a class="nav-link" href="#personas">Personas</a>
+    <a class="nav-link" href="#ia">Architecture</a>
+    <a class="nav-link" href="#design">Design</a>
+    <a class="nav-link" href="#outcomes">Outcomes</a>
+    <a class="nav-link" href="#designer">About</a>
+  </div>
+  <a class="nav-cta" href="#designer">View Portfolio →</a>
+</nav>
+
+<!-- ══════════════════════════════════
+     HERO
+══════════════════════════════════ -->
+<section class="cs-hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-line"></div>
+      <div class="hero-eyebrow-text">UX/UI Case Study · 2025</div>
+    </div>
+    <div class="hero-title">IMDb<br><em>Redesign</em></div>
+    <div class="hero-subtitle">From data warehouse to cinematic discovery platform</div>
+    <div class="hero-meta-row">
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Designer</div>
+        <div class="hero-meta-val">Hisham Diab</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Role</div>
+        <div class="hero-meta-val">UX Research · UI Design · Prototyping</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Duration</div>
+        <div class="hero-meta-val">6 Weeks · Solo Project</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Tools</div>
+        <div class="hero-tags">
+          <span class="hero-tag">Figma</span>
+          <span class="hero-tag">HTML/CSS</span>
+          <span class="hero-tag">Research</span>
+          <span class="hero-tag">Prototyping</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <span>Scroll</span>
+    <div class="hero-scroll-line"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     01 — OVERVIEW
+══════════════════════════════════ -->
+<section class="cs-section" id="overview">
+  <div class="s-header reveal">
+    <div class="s-number">01</div>
+    <div class="s-head-right">
+      <div class="s-eyebrow">Project Overview</div>
+      <div class="s-title">The Problem<br><em>Worth Solving</em></div>
+      <p class="s-lead">IMDb is the world's largest film database — trusted by 200M+ users, backed by Amazon, and sitting on the most comprehensive entertainment dataset ever assembled. Yet it is losing the generation that will define the next decade of media consumption.</p>
+    </div>
+  </div>
+
+  <div class="two-col-text reveal">
+    <div class="col-text">
+      <p>Gen Z discovers films through TikTok's FYP. They manage watchlists in Notes apps. They share opinions on Letterboxd. They find streaming availability on JustWatch. IMDb — theoretically the single platform that could serve all these needs — gets used only to check ratings, then abandoned.</p>
+      <p>This project asks a simple question: <em style="color:var(--white-dim);font-family:var(--font-d);">What if IMDb actually designed for the way people experience film?</em></p>
+    </div>
+    <div class="col-text">
+      <p>The redesign is not about cosmetics. It is a fundamental rethinking of IMDb's product strategy — from a database you query to a platform that understands you, discovers with you, and helps you decide what to watch in under 60 seconds.</p>
+      <p>The result: a full UX sprint covering research, personas, information architecture, user flows, and a production-grade interactive prototype across desktop and mobile.</p>
+    </div>
+  </div>
+
+  <div class="inline-stats reveal">
+    <div class="inline-stat"><div class="is-num">200M+</div><div class="is-lbl">Monthly Users</div></div>
+    <div class="inline-stat"><div class="is-num">8.7M+</div><div class="is-lbl">Titles in DB</div></div>
+    <div class="inline-stat"><div class="is-num">28</div><div class="is-lbl">Desktop Screens</div></div>
+    <div class="inline-stat"><div class="is-num">9</div><div class="is-lbl">Mobile Screens</div></div>
+    <div class="inline-stat"><div class="is-num">8</div><div class="is-lbl">New Features</div></div>
+    <div class="inline-stat"><div class="is-num">6wk</div><div class="is-lbl">Sprint Duration</div></div>
+  </div>
+
+  <div class="overview-grid reveal">
+    <div class="ov-card">
+      <div class="ov-num">3</div>
+      <div class="ov-unit">Core Personas Defined</div>
+      <div class="ov-label">Gen Z Casual · Film Enthusiast · Family Decision-Maker</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-num">6</div>
+      <div class="ov-unit">Competitors Audited</div>
+      <div class="ov-label">Letterboxd · RT · JustWatch · Netflix · TikTok/MovieTok</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-num">5</div>
+      <div class="ov-unit">User Flows Mapped</div>
+      <div class="ov-label">Discovery · Decision · Playlist · Film Diary · Onboarding</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     02 — RESEARCH
+══════════════════════════════════ -->
+<section class="cs-section cs-section-alt" id="research">
+  <div class="s-header reveal">
+    <div class="s-number">02</div>
+    <div class="s-head-right">
+      <div class="s-eyebrow">UX Research</div>
+      <div class="s-title">What's Broken<br><em>& Why It Matters</em></div>
+      <p class="s-lead">A combination of heuristic evaluation, competitive analysis, and secondary research revealed eight core problems — each mapped to a severity level and a design response.</p>
+    </div>
+  </div>
+
+  <div class="problem-list reveal">
+    <div class="problem-item">
+      <div><span class="problem-sev sev-crit">Critical</span></div>
+      <div class="problem-body">
+        <h3>Discovery is Dead</h3>
+        <p>Users can't find what to watch next. No mood-based filtering, no intelligent recommendations, no serendipity. IMDb functions as a catalog you already know how to use — not a guide to what you don't know yet.</p>
+      </div>
+      <div class="problem-ux-law">Hick's Law violation<br>Too many paths, no clear entry</div>
+    </div>
+    <div class="problem-item">
+      <div><span class="problem-sev sev-crit">Critical</span></div>
+      <div class="problem-body">
+        <h3>Cognitive Overload on Every Page</h3>
+        <p>Movie pages surface cast, crew, trivia, parental guides, user reviews, awards, and technical specs simultaneously — without hierarchy, grouping, or progressive disclosure. Miller's Law is violated on every screen.</p>
+      </div>
+      <div class="problem-ux-law">Miller's Law + Gestalt<br>No visual grouping or hierarchy</div>
+    </div>
+    <div class="problem-item">
+      <div><span class="problem-sev sev-crit">Critical</span></div>
+      <div class="problem-body">
+        <h3>The Decision Paradox</h3>
+        <p>IMDb's core job-to-be-done: help me decide what to watch. Yet there is no clear "worth watching" verdict, no streaming availability per region, no single CTA. Users leave IMDb to Google the answer.</p>
+      </div>
+      <div class="problem-ux-law">Peak-End Rule failure<br>Journey ends in frustration</div>
+    </div>
+    <div class="problem-item">
+      <div><span class="problem-sev sev-crit">Critical</span></div>
+      <div class="problem-body">
+        <h3>Aggressive, Disruptive Advertising</h3>
+        <p>IMDb's ad density is among the highest of any media platform. Ads interrupt reading, hijack scroll, and break mobile layouts — alienating exactly the premium users IMDb's advertisers want to reach.</p>
+      </div>
+      <div class="problem-ux-law">Aesthetic-Usability Effect<br>Perceived quality collapses</div>
+    </div>
+    <div class="problem-item">
+      <div><span class="problem-sev sev-mod">Moderate</span></div>
+      <div class="problem-body">
+        <h3>Zero Meaningful Personalization</h3>
+        <p>The homepage is identical for a first-time visitor and a 10-year power user. Ratings and watchlist data are collected but barely leveraged. The platform knows you but acts like it doesn't.</p>
+      </div>
+      <div class="problem-ux-law">Recognition over Recall<br>No personalized shortcuts</div>
+    </div>
+    <div class="problem-item">
+      <div><span class="problem-sev sev-mod">Moderate</span></div>
+      <div class="problem-body">
+        <h3>No Community or Social Layer</h3>
+        <p>Reviews exist in isolation. There is no way to follow critics you trust, see what friends are watching, or discover films through social proof. Letterboxd has built its entire competitive advantage on this gap.</p>
+      </div>
+      <div class="problem-ux-law">Social Proof principle<br>Missing entirely from product</div>
+    </div>
+    <div class="problem-item">
+      <div><span class="problem-sev sev-mod">Moderate</span></div>
+      <div class="problem-body">
+        <h3>Mobile is an Afterthought</h3>
+        <p>The mobile app compresses desktop content rather than rethinking it. Dense tables, small tap targets, horizontal overflow, and a bottom nav that doesn't match mental models. Gen Z users abandon on first friction.</p>
+      </div>
+      <div class="problem-ux-law">Fitts's Law failure<br>Small targets, poor reach zones</div>
+    </div>
+    <div class="problem-item">
+      <div><span class="problem-sev sev-low">Low</span></div>
+      <div class="problem-body">
+        <h3>Dated Visual Identity</h3>
+        <p>The yellow-black palette carries connotations from 2005. Gen Z describes IMDb as "functional but ugly" and "what my parents use." The brand has zero cultural currency with the demographic that will define the next decade.</p>
+      </div>
+      <div class="problem-ux-law">Aesthetic-Usability Effect<br>Negative brand perception</div>
+    </div>
+  </div>
+
+  <!-- Quote -->
+  <div class="quote-block reveal">
+    <div class="quote-text">"IMDb is data-rich but experience-poor. It knows everything about every film — and almost nothing about the person watching it."</div>
+    <div class="quote-attr">— Hisham Diab, Research Synthesis</div>
+  </div>
+
+  <!-- Competitive Audit -->
+  <div class="s-header reveal" style="margin-top:64px;">
+    <div class="s-number">02b</div>
+    <div class="s-head-right">
+      <div class="s-eyebrow">Competitive Audit</div>
+      <div class="s-title">Who Owns<br><em>Each Piece</em></div>
+    </div>
+  </div>
+
+  <div class="audit-wrap reveal">
+    <table class="audit-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>IMDb Now</th>
+          <th>Letterboxd</th>
+          <th>Rotten Tomatoes</th>
+          <th>JustWatch</th>
+          <th>Netflix</th>
+          <th class="gold-col">IMDb Redesign</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Comprehensive Database</td><td class="t-yes">✓</td><td class="t-half">◑</td><td class="t-half">◑</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-yes gold-col">✓</td></tr>
+        <tr><td>Modern UI / Gen Z Appeal</td><td class="t-no">✗</td><td class="t-yes">✓</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-yes">✓</td><td class="t-yes gold-col">✓</td></tr>
+        <tr><td>Community & Social Layer</td><td class="t-no">✗</td><td class="t-yes">✓</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-yes gold-col">✓</td></tr>
+        <tr><td>Mood-Based Discovery</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-half">◑</td><td class="t-no">✗</td><td class="t-yes gold-col">✓</td></tr>
+        <tr><td>Streaming Availability</td><td class="t-half">◑</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-yes">✓</td><td class="t-no">✗</td><td class="t-yes gold-col">✓</td></tr>
+        <tr><td>Smart Watchlist / Playlists</td><td class="t-no">✗</td><td class="t-half">◑</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-yes gold-col">✓</td></tr>
+        <tr><td>Film Diary</td><td class="t-no">✗</td><td class="t-yes">✓</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-yes gold-col">✓</td></tr>
+        <tr><td>Quick Decision Box</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-half">◑</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-yes gold-col">✓</td></tr>
+        <tr><td>AI Personalization</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-yes">✓</td><td class="t-yes gold-col">✓</td></tr>
+        <tr><td>Mobile-First Experience</td><td class="t-no">✗</td><td class="t-half">◑</td><td class="t-no">✗</td><td class="t-no">✗</td><td class="t-yes">✓</td><td class="t-yes gold-col">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="background:var(--black-deep);border:1px solid var(--b-gold);border-radius:12px;padding:28px;margin-top:20px;" class="reveal">
+    <div class="s-eyebrow" style="margin-bottom:10px;">Strategic White Space</div>
+    <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:300;margin-bottom:10px;">The Golden Opportunity</div>
+    <p style="font-size:0.84rem;color:var(--gray-l);line-height:1.75;font-weight:300;">No single platform combines: comprehensive database + community + mood-based discovery + streaming availability + cinematic UI in one place. Each competitor owns one piece. The redesigned IMDb is the first platform to own all five — and that is the unfair competitive advantage.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     03 — PERSONAS
+══════════════════════════════════ -->
+<section class="cs-section" id="personas">
+  <div class="s-header reveal">
+    <div class="s-number">03</div>
+    <div class="s-head-right">
+      <div class="s-eyebrow">User Personas</div>
+      <div class="s-title">Who We're<br><em>Designing For</em></div>
+      <p class="s-lead">Three distinct archetypes emerged from the research — each with fundamentally different needs, behaviors, and mental models around film discovery.</p>
+    </div>
+  </div>
+
+  <div class="personas-row reveal">
+    <!-- Persona 1 -->
+    <div class="persona-card">
+      <div class="persona-img">
+        <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop&crop=face" alt="Nour">
+        <div class="persona-img-grad"></div>
+        <div class="persona-img-info">
+          <div class="persona-name">Nour, 22</div>
+          <div class="persona-role">The Gen Z Casual Viewer</div>
+        </div>
+      </div>
+      <div class="persona-body">
+        <div class="persona-quote">"I just want to find something good to watch tonight without spending 20 minutes scrolling."</div>
+        <div class="persona-chips">
+          <span class="p-chip">Gen Z</span><span class="p-chip">TikTok native</span><span class="p-chip">Mood-driven</span><span class="p-chip">Mobile-first</span>
+        </div>
+        <div class="persona-goals">
+          <h4>Goals</h4>
+          <ul class="persona-list">
+            <li>Find a film quickly by mood or vibe</li>
+            <li>See what friends are watching</li>
+            <li>Know exactly where to stream it</li>
+            <li>Share picks on social media</li>
+          </ul>
+        </div>
+        <div class="persona-pains">
+          <h4>Frustrations</h4>
+          <ul class="persona-list">
+            <li>IMDb feels overwhelming and old</li>
+            <li>Can't search by vibe or emotion</li>
+            <li>No social layer to connect with</li>
+            <li>Ads destroy the mobile experience</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Persona 2 -->
+    <div class="persona-card">
+      <div class="persona-img">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face" alt="Khaled">
+        <div class="persona-img-grad"></div>
+        <div class="persona-img-info">
+          <div class="persona-name">Khaled, 34</div>
+          <div class="persona-role">The Film Enthusiast</div>
+        </div>
+      </div>
+      <div class="persona-body">
+        <div class="persona-quote">"I need the full picture — director history, cinematographer, box office, trivia — before I commit to watching anything."</div>
+        <div class="persona-chips">
+          <span class="p-chip">Millennial</span><span class="p-chip">Film buff</span><span class="p-chip">Research-driven</span><span class="p-chip">Desktop user</span>
+        </div>
+        <div class="persona-goals">
+          <h4>Goals</h4>
+          <ul class="persona-list">
+            <li>Deep dive into credits & production</li>
+            <li>Track viewing history accurately</li>
+            <li>Write and read quality reviews</li>
+            <li>Build curated lists by theme or director</li>
+          </ul>
+        </div>
+        <div class="persona-pains">
+          <h4>Frustrations</h4>
+          <ul class="persona-list">
+            <li>Information scattered, hard to scan</li>
+            <li>Review section buried under ads</li>
+            <li>Watchlist has no organisation options</li>
+            <li>No way to follow trusted critics</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Persona 3 -->
+    <div class="persona-card">
+      <div class="persona-img">
+        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face" alt="Sara">
+        <div class="persona-img-grad"></div>
+        <div class="persona-img-info">
+          <div class="persona-name">Sara, 42</div>
+          <div class="persona-role">The Family Decision-Maker</div>
+        </div>
+      </div>
+      <div class="persona-body">
+        <div class="persona-quote">"Is this appropriate for my kids, and is it actually worth our Friday night together?"</div>
+        <div class="persona-chips">
+          <span class="p-chip">Parent</span><span class="p-chip">Decision-focused</span><span class="p-chip">Time-poor</span><span class="p-chip">Trust-driven</span>
+        </div>
+        <div class="persona-goals">
+          <h4>Goals</h4>
+          <ul class="persona-list">
+            <li>Quick age-appropriateness check</li>
+            <li>Reliable "worth watching" verdict</li>
+            <li>Find family-friendly options fast</li>
+            <li>Know which platform has it tonight</li>
+          </ul>
+        </div>
+        <div class="persona-pains">
+          <h4>Frustrations</h4>
+          <ul class="persona-list">
+            <li>Parental guide is buried deep</li>
+            <li>Too much info, impossible to scan</li>
+            <li>No family filter on discovery</li>
+            <li>Ads inappropriate for family context</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Journey Map -->
+  <div class="s-header reveal" style="margin-top:72px;">
+    <div class="s-number">03b</div>
+    <div class="s-head-right">
+      <div class="s-eyebrow">User Journey Map</div>
+      <div class="s-title">Nour's Journey —<br><em>"Find Something Tonight"</em></div>
+    </div>
+  </div>
+
+  <div class="journey-wrap reveal">
+    <table class="journey-table">
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>Trigger</th>
+          <th>Discovery</th>
+          <th>Evaluation</th>
+          <th>Decision</th>
+          <th>Action</th>
+          <th>Post-Watch</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="stage-col">Action</td>
+          <td>Feels bored, picks up phone</td>
+          <td>Opens IMDb, sees Mood Picker</td>
+          <td>Browses Thrilling film cards</td>
+          <td>Taps film, reads Decision Box</td>
+          <td>Taps "Watch on Prime"</td>
+          <td>Returns to log film + rate</td>
+        </tr>
+        <tr>
+          <td class="stage-col">Touchpoint</td>
+          <td>Phone habit / notification</td>
+          <td>Home — Mood Picker CTA</td>
+          <td>Mood Results Feed</td>
+          <td>Film Page — Quick Decision Box</td>
+          <td>Streaming redirect</td>
+          <td>Film Diary prompt</td>
+        </tr>
+        <tr>
+          <td class="stage-col">Emotion</td>
+          <td><div class="j-emo"><span class="j-dot j-ok"></span><span class="j-dot j-ok"></span><span class="j-dot j-ok"></span></div>Neutral</td>
+          <td><div class="j-emo"><span class="j-dot j-great"></span><span class="j-dot j-great"></span><span class="j-dot j-great"></span></div>Curious</td>
+          <td><div class="j-emo"><span class="j-dot j-great"></span><span class="j-dot j-great"></span><span class="j-dot j-ok"></span></div>Engaged</td>
+          <td><div class="j-emo"><span class="j-dot j-great"></span><span class="j-dot j-great"></span><span class="j-dot j-great"></span></div>Confident</td>
+          <td><div class="j-emo"><span class="j-dot j-great"></span><span class="j-dot j-great"></span><span class="j-dot j-great"></span></div>Satisfied</td>
+          <td><div class="j-emo"><span class="j-dot j-great"></span><span class="j-dot j-great"></span><span class="j-dot j-great"></span></div>Loyal</td>
+        </tr>
+        <tr>
+          <td class="stage-col">Pain Points<br>(Current)</td>
+          <td><div class="j-pain">No reason to open IMDb</div></td>
+          <td><div class="j-pain">Generic homepage, no mood entry</div></td>
+          <td><div class="j-pain">Cluttered cards, no vibe filter</div></td>
+          <td><div class="j-pain">Decision data scattered across page</div></td>
+          <td><div class="j-pain">No streaming link — must Google</div></td>
+          <td><div class="j-pain">No diary or post-watch engagement</div></td>
+        </tr>
+        <tr>
+          <td class="stage-col">Opportunities<br>(Redesign)</td>
+          <td><div class="j-opp">Push: "What are you watching tonight?"</div></td>
+          <td><div class="j-opp">Mood Picker as primary home CTA</div></td>
+          <td><div class="j-opp">Cinematic mood cards with film count</div></td>
+          <td><div class="j-opp">Sticky Quick Decision Box</div></td>
+          <td><div class="j-opp">1-tap streaming redirect, integrated</div></td>
+          <td><div class="j-opp">Film Diary prompt + shareable card</div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     04 — IA & FLOWS
+══════════════════════════════════ -->
+<section class="cs-section cs-section-alt" id="ia">
+  <div class="s-header reveal">
+    <div class="s-number">04</div>
+    <div class="s-head-right">
+      <div class="s-eyebrow">Information Architecture</div>
+      <div class="s-title">Site Map &<br><em>User Flows</em></div>
+      <p class="s-lead">The new IA reorganizes IMDb around user intent rather than data categories — shifting from "what exists" to "what do you need right now?"</p>
+    </div>
+  </div>
+
+  <!-- Site Map -->
+  <div class="sitemap-wrap reveal">
+    <div class="sitemap-root">
+      <div class="sitemap-root-node">IMDb Redesign</div>
+    </div>
+    <div class="sitemap-branches">
+      <div class="sitemap-branch">
+        <div class="sitemap-node-1">🏠 Home</div>
+        <div class="sitemap-node-2">Mood Picker</div>
+        <div class="sitemap-node-2">Trending Now</div>
+        <div class="sitemap-node-2">Personalized Feed</div>
+        <div class="sitemap-node-2">Friends Activity</div>
+        <div class="sitemap-node-2">New Releases</div>
+        <div class="sitemap-node-2">Hidden Gems</div>
+      </div>
+      <div class="sitemap-branch">
+        <div class="sitemap-node-1">🔍 Search</div>
+        <div class="sitemap-node-2">Expanding Search Bar</div>
+        <div class="sitemap-node-2">Autocomplete</div>
+        <div class="sitemap-node-2">Advanced Filters</div>
+        <div class="sitemap-node-2">Results Grid</div>
+        <div class="sitemap-node-2">Search History</div>
+      </div>
+      <div class="sitemap-branch">
+        <div class="sitemap-node-1">🎬 Film Page</div>
+        <div class="sitemap-node-2">Hero + Quick Decision Box</div>
+        <div class="sitemap-node-2">Tab: Overview</div>
+        <div class="sitemap-node-2">Tab: Cast & Crew</div>
+        <div class="sitemap-node-2">Tab: Reviews</div>
+        <div class="sitemap-node-2">Tab: Media</div>
+        <div class="sitemap-node-2">Tab: Details</div>
+        <div class="sitemap-node-2">Where to Watch</div>
+      </div>
+      <div class="sitemap-branch">
+        <div class="sitemap-node-1">📚 Library</div>
+        <div class="sitemap-node-2">Smart Playlists</div>
+        <div class="sitemap-node-2">Film Diary</div>
+        <div class="sitemap-node-2">My Ratings</div>
+        <div class="sitemap-node-2">Custom Lists</div>
+        <div class="sitemap-node-2">Statistics</div>
+      </div>
+      <div class="sitemap-branch">
+        <div class="sitemap-node-1">🎭 Discover</div>
+        <div class="sitemap-node-2">Mood Categories</div>
+        <div class="sitemap-node-2">Genre Browse</div>
+        <div class="sitemap-node-2">Decade Explorer</div>
+        <div class="sitemap-node-2">Awards & Festivals</div>
+        <div class="sitemap-node-2">IMDb Charts</div>
+      </div>
+      <div class="sitemap-branch">
+        <div class="sitemap-node-1">👤 Profile</div>
+        <div class="sitemap-node-2">Public Profile</div>
+        <div class="sitemap-node-2">AI Taste Profile</div>
+        <div class="sitemap-node-2">Following / Followers</div>
+        <div class="sitemap-node-2">Reviews Written</div>
+        <div class="sitemap-node-2">Settings</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Flows -->
+  <div style="margin-top:64px;" class="reveal">
+    <div class="s-eyebrow" style="margin-bottom:20px;">5 Critical User Flows</div>
+
+    <div class="flow-block">
+      <div class="flow-label">Flow 01 — Mood-Based Discovery (Primary)</div>
+      <div class="flow-steps">
+        <div class="flow-node start">Open App<sub>Home Screen</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Mood Picker<sub>"Tonight I feel..."</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Select Mood<sub>e.g. Thrilling</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Results Feed<sub>Curated Grid</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Film Page<sub>Decision Box</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node decision">Interested?</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node end">Watch / Add to List<sub>Decision Made ✓</sub></div>
+      </div>
+    </div>
+
+    <div class="flow-block">
+      <div class="flow-label">Flow 02 — Smart Watchlist / Playlist Management</div>
+      <div class="flow-steps">
+        <div class="flow-node start">My Library<sub>Tab</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Playlists Tab<sub>Grid View</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Create Playlist<sub>Name + Cover</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Add Films<sub>Search within</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Set Schedule<sub>Optional</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node end">Share / Save<sub>Playlist Live ✓</sub></div>
+      </div>
+    </div>
+
+    <div class="flow-block">
+      <div class="flow-label">Flow 03 — Film Evaluation & Decision</div>
+      <div class="flow-steps">
+        <div class="flow-node start">Film Page<sub>Via any entry</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Quick Decision Box<sub>Rating · Runtime · Platform</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node decision">Decided?</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Read Reviews<sub>If undecided</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Watch Trailer<sub>Media tab</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node end">Watch Now<sub>1-Tap Action ✓</sub></div>
+      </div>
+    </div>
+
+    <div class="flow-block">
+      <div class="flow-label">Flow 04 — Post-Watch Film Diary</div>
+      <div class="flow-steps">
+        <div class="flow-node start">Finish Film<sub>External</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Push Notification<sub>"How was it?"</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Rate Film<sub>Star Rating</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Write Note<sub>Optional</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Diary Saved<sub>My Library</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node end">Share Card<sub>Social ✓</sub></div>
+      </div>
+    </div>
+
+    <div class="flow-block">
+      <div class="flow-label">Flow 05 — New User Onboarding & Taste Setup</div>
+      <div class="flow-steps">
+        <div class="flow-node start">Sign Up<sub>Account</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Pick Moods<sub>Favourite vibes</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Rate 5 Films<sub>Quick swipe</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Follow Friends<sub>Contact sync</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Taste Profile Built<sub>AI analysis</sub></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node end">Personalised Home<sub>Ready to discover ✓</sub></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     05 — DESIGN
+══════════════════════════════════ -->
+<section class="cs-section" id="design">
+  <div class="s-header reveal">
+    <div class="s-number">05</div>
+    <div class="s-head-right">
+      <div class="s-eyebrow">Design System & Decisions</div>
+      <div class="s-title">Building the<br><em>Visual Language</em></div>
+      <p class="s-lead">Every design decision is grounded in the research — not aesthetic preference alone. The system had to feel cinematic, modern, and culturally credible to Gen Z while remaining accessible to all user types.</p>
+    </div>
+  </div>
+
+  <!-- Color System -->
+  <div style="margin-bottom:56px;" class="reveal">
+    <div class="s-eyebrow" style="margin-bottom:20px;">Colour System</div>
+    <div class="ds-colors">
+      <div class="ds-color">
+        <div class="ds-color-swatch" style="background:#141414;border:1px solid rgba(242,242,242,0.06);"></div>
+        <div class="ds-color-info"><div class="ds-color-hex">#141414</div><div class="ds-color-name">Void — Base BG</div></div>
+      </div>
+      <div class="ds-color">
+        <div class="ds-color-swatch" style="background:#2A2A2A;"></div>
+        <div class="ds-color-info"><div class="ds-color-hex">#2A2A2A</div><div class="ds-color-name">Deep — Cards</div></div>
+      </div>
+      <div class="ds-color">
+        <div class="ds-color-swatch" style="background:#3A3A3A;"></div>
+        <div class="ds-color-info"><div class="ds-color-hex">#3A3A3A</div><div class="ds-color-name">Black — Surfaces</div></div>
+      </div>
+      <div class="ds-color">
+        <div class="ds-color-swatch" style="background:#525252;"></div>
+        <div class="ds-color-info"><div class="ds-color-hex">#525252</div><div class="ds-color-name">Gray Heavy — Borders</div></div>
+      </div>
+      <div class="ds-color">
+        <div class="ds-color-swatch" style="background:#8A8A8A;"></div>
+        <div class="ds-color-info"><div class="ds-color-hex">#8A8A8A</div><div class="ds-color-name">Gray Light — Metadata</div></div>
+      </div>
+      <div class="ds-color">
+        <div class="ds-color-swatch" style="background:#F2F2F2;"></div>
+        <div class="ds-color-info"><div class="ds-color-hex">#F2F2F2</div><div class="ds-color-name">White — Primary Text</div></div>
+      </div>
+      <div class="ds-color">
+        <div class="ds-color-swatch" style="background:#C8A96E;"></div>
+        <div class="ds-color-info"><div class="ds-color-hex">#C8A96E</div><div class="ds-color-name">Gold — Ratings Only</div></div>
+      </div>
+    </div>
+    <p style="font-size:0.78rem;color:var(--gray-l);max-width:540px;line-height:1.7;font-weight:300;font-style:italic;">Rationale: A monochromatic palette with a single warm accent creates the cinematic, editorial aesthetic that the target audience associates with quality film culture. The gold is reserved exclusively for rating data to preserve its semantic meaning.</p>
+  </div>
+
+  <!-- Typography -->
+  <div style="margin-bottom:56px;" class="reveal">
+    <div class="s-eyebrow" style="margin-bottom:20px;">Typography</div>
+    <div class="ds-type">
+      <div class="ds-type-sample">
+        <div class="sample-text" style="font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:300;letter-spacing:-0.02em;line-height:0.95;">Cormorant Garamond</div>
+        <div class="ds-type-meta">Display · Headlines · Film Titles · Light 300 / Italic</div>
+      </div>
+      <div class="ds-type-sample">
+        <div class="sample-text" style="font-family:'Outfit',sans-serif;font-size:1rem;font-weight:400;color:var(--white-dim);">Outfit — Body text, navigation, buttons, UI elements. Weights 300–600.</div>
+        <div class="ds-type-meta">Body · UI · Navigation · 300 / 400 / 500 / 600</div>
+      </div>
+      <div class="ds-type-sample">
+        <div class="sample-text" style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gray-l);letter-spacing:0.15em;text-transform:uppercase;">DM MONO · LABELS · METADATA · EYEBROWS</div>
+        <div class="ds-type-meta">Mono · Labels · Ratings · Eyebrows · Regular / Medium</div>
+      </div>
+    </div>
+    <p style="font-size:0.78rem;color:var(--gray-l);max-width:540px;line-height:1.7;font-weight:300;font-style:italic;">Rationale: Cormorant Garamond brings editorial gravitas — the kind you see in film magazine mastheads. Outfit provides clean readability for UI text. DM Mono gives technical precision to data labels. Three fonts, three purposes, zero overlap.</p>
+  </div>
+
+  <!-- Key Design Decisions -->
+  <div class="reveal">
+    <div class="s-eyebrow" style="margin-bottom:24px;">Key Design Decisions</div>
+    <div class="decisions-grid">
+      <div class="decision-card">
+        <div class="decision-type">UX Decision · Discovery</div>
+        <h3>Mood Picker as Primary Home CTA</h3>
+        <p>Rather than genre dropdown or search, the primary entry point to discovery is emotional. Users select a mood — Bittersweet, Thrilling, Late Night — and receive a curated feed instantly. This reduces Hick's Law cognitive load from 20+ genre options to 6 emotional categories.</p>
+        <span class="decision-law">Hick's Law · Emotional Design</span>
+      </div>
+      <div class="decision-card">
+        <div class="decision-type">UI Decision · Film Page</div>
+        <h3>Sticky Quick Decision Box</h3>
+        <p>A persistent sidebar widget showing: IMDb rating, runtime, age rating, audience verdict percentage, and streaming availability. Answers the user's core question — "Should I watch this? Where?" — without any scrolling. Reduces the "leave to Google" behaviour pattern.</p>
+        <span class="decision-law">Peak-End Rule · Fitts's Law</span>
+      </div>
+      <div class="decision-card">
+        <div class="decision-type">UX Decision · Engagement</div>
+        <h3>Tabbed Movie Page (not Scroll)</h3>
+        <p>Information is reorganised into five progressive tabs: Overview, Cast, Reviews, Media, Details. Each tab serves a specific user intent. This directly addresses the cognitive overload problem — no user is ever confronted with more information than they sought.</p>
+        <span class="decision-law">Miller's Law · Progressive Disclosure</span>
+      </div>
+      <div class="decision-card">
+        <div class="decision-type">UX Decision · Retention</div>
+        <h3>Spotify-Style Smart Playlists</h3>
+        <p>Watchlists become intentional, named, shareable playlists with custom covers generated from film posters. "Date Night 🍿", "Classics I Owe Myself", "Horror Season". This transforms a forgotten list into a personal curatorial project — dramatically increasing feature usage and retention.</p>
+        <span class="decision-law">Endowment Effect · Social Proof</span>
+      </div>
+      <div class="decision-card">
+        <div class="decision-type">UI Decision · Mobile</div>
+        <h3>Horizontal Mood Scroll on Mobile</h3>
+        <p>The mobile Mood Picker is a horizontally scrollable row of chips — always visible, always accessible, never requiring a tap to reveal. Following TikTok's content-type row pattern which Gen Z users already understand intuitively. Familiar mental model, new context.</p>
+        <span class="decision-law">Jakob's Law · Recognition over Recall</span>
+      </div>
+      <div class="decision-card">
+        <div class="decision-type">UI Decision · Visual Identity</div>
+        <h3>Cinematic Grain + Monochrome Palette</h3>
+        <p>A subtle noise texture overlay on hero images gives the UI a filmic quality reminiscent of actual cinema. The strict monochromatic palette with a single gold accent creates the editorial restraint associated with Criterion, A24, and premium film culture — brands Nour actively aspires to.</p>
+        <span class="decision-law">Aesthetic-Usability Effect</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div style="margin-top:64px;" class="reveal">
+    <div class="s-eyebrow" style="margin-bottom:24px;">8 New Features — Rationale</div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">💔</div>
+        <div>
+          <div class="feature-type">UX · Discovery</div>
+          <h3>Mood Picker</h3>
+          <p>Emotional navigation. 6 moods replace genre browsing. Solves discovery paralysis through progressive emotional filtering instead of categorical search.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎬</div>
+        <div>
+          <div class="feature-type">UX · Engagement</div>
+          <h3>Smart Watchlist / Playlists</h3>
+          <p>Spotify-style named lists with custom covers. Transforms passive watchlists into intentional viewing plans. Shareable, schedulable, personal.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <div>
+          <div class="feature-type">UI · Decision</div>
+          <h3>Quick Decision Box</h3>
+          <p>Sticky sidebar showing rating, runtime, verdict, and streaming links. Answers "should I watch this and where?" in under 5 seconds. Kills the #1 exit behaviour.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <div>
+          <div class="feature-type">UX · Personalisation</div>
+          <h3>AI Taste Profile</h3>
+          <p>"Because you rated Parasite 9/10..." Surfaces hidden gems aligned with proven taste. Personal, explainable recommendations from the full 8.7M database.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <div>
+          <div class="feature-type">UX · Social</div>
+          <h3>Friends & Critics Feed</h3>
+          <p>Follow friends and trusted critics. See ratings, reviews, and activity in a clean feed. Makes IMDb feel alive. The Letterboxd feature IMDb needs most.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📺</div>
+        <div>
+          <div class="feature-type">UX · Utility</div>
+          <h3>Streaming Availability Hub</h3>
+          <p>Real-time regional streaming info integrated into film cards and the Decision Box. Eliminates the #1 reason users leave IMDb mid-session.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📓</div>
+        <div>
+          <div class="feature-type">UX · Retention</div>
+          <h3>Film Diary</h3>
+          <p>Log films with date, rating, and personal note. A beautiful, shareable personal cinema history. The feature that built Letterboxd's entire Gen Z user base.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✦</div>
+        <div>
+          <div class="feature-type">Business · Revenue</div>
+          <h3>IMDb Premium</h3>
+          <p>Ad-free experience + exclusive critic insights + advanced Taste Profile. Converts IMDb's most loyal users into paying subscribers. Replaces ad dependency.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     06 — OUTCOMES
+══════════════════════════════════ -->
+<section class="cs-section cs-section-alt" id="outcomes">
+  <div class="s-header reveal">
+    <div class="s-number">06</div>
+    <div class="s-head-right">
+      <div class="s-eyebrow">Expected Outcomes & KPIs</div>
+      <div class="s-title">What Success<br><em>Looks Like</em></div>
+      <p class="s-lead">Based on industry benchmarks from similar product redesigns (Letterboxd community growth, JustWatch conversion data, Netflix personalisation studies), these outcomes are achievable within 12 months of launch.</p>
+    </div>
+  </div>
+
+  <div class="metrics-grid reveal">
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--white);">+40%</div>
+      <div class="metric-unit">Session Duration</div>
+      <div class="metric-label">Average time per visit</div>
+      <div class="metric-desc">Via Mood + Discovery features</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--white);">+60%</div>
+      <div class="metric-unit">Mobile Retention D30</div>
+      <div class="metric-label">30-day return rate</div>
+      <div class="metric-desc">Via Film Diary + Social layer</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--white);">-30%</div>
+      <div class="metric-unit">Bounce Rate</div>
+      <div class="metric-label">Users who leave immediately</div>
+      <div class="metric-desc">Via Quick Decision Box</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--white);">+25%</div>
+      <div class="metric-unit">Watchlist Engagement</div>
+      <div class="metric-label">Active watchlist users</div>
+      <div class="metric-desc">Via Smart Playlist system</div>
+    </div>
+  </div>
+
+  <!-- Learnings -->
+  <div style="margin-top:72px;" class="reveal">
+    <div class="s-eyebrow" style="margin-bottom:32px;">Key Learnings</div>
+    <div class="learning-list">
+      <div class="learning-item">
+        <div class="learning-n">01</div>
+        <div class="learning-body">
+          <h3>Emotion is a Valid Navigation System</h3>
+          <p>The insight that mood should be the primary entry to discovery — not genre or search — came from observing how people actually talk about wanting to watch something. Nobody says "I want a genre-drama film." They say "I want something that makes me cry" or "I need something light." Design should meet users in their natural language.</p>
+        </div>
+      </div>
+      <div class="learning-item">
+        <div class="learning-n">02</div>
+        <div class="learning-body">
+          <h3>The Competition Gap is a Design Opportunity</h3>
+          <p>Running a structured competitive audit revealed that every competitor excels at one thing and fails at everything else. IMDb's actual competitive moat — its database — is underutilised. The design opportunity was not to build something new, but to use what already exists in a smarter, more human way.</p>
+        </div>
+      </div>
+      <div class="learning-item">
+        <div class="learning-n">03</div>
+        <div class="learning-body">
+          <h3>One Clear Question per Screen</h3>
+          <p>The biggest structural failure of the current IMDb is asking users to answer multiple questions simultaneously on every screen. The redesign enforces a single primary question per view: "What do you feel?" on Discover, "Should I watch this?" on Film Page, "What have I watched?" on Library. Clarity of purpose drives engagement.</p>
+        </div>
+      </div>
+      <div class="learning-item">
+        <div class="learning-n">04</div>
+        <div class="learning-body">
+          <h3>Visual Identity is a Product Decision, not a Cosmetic One</h3>
+          <p>The shift to a monochromatic, editorial palette is not aesthetic preference — it is a deliberate positioning decision. The gold/black IMDb palette signals "database tool." The new palette signals "cultural institution for serious film lovers." Brand perception directly affects willingness to engage, share, and pay.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     07 — ABOUT THE DESIGNER
+══════════════════════════════════ -->
+<section class="cs-section" id="designer">
+  <div class="s-header reveal">
+    <div class="s-number">07</div>
+    <div class="s-head-right">
+      <div class="s-eyebrow">About the Designer</div>
+      <div class="s-title">Hisham<br><em>Diab</em></div>
+    </div>
+  </div>
+
+  <div class="designer-section reveal">
+    <div class="designer-left">
+      <div class="designer-avatar">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face" alt="Hisham Diab">
+      </div>
+      <div class="designer-name">Hisham Diab</div>
+      <div class="designer-title">Junior UX/UI Designer · Cairo, Egypt</div>
+      <div class="designer-bio">Systems-minded designer with a background in Sharia & Law from Al-Azhar University. Specialises in Care Systems & Human Responsibility Design — health tech, family coordination, and platforms that serve real human needs with clarity and dignity.</div>
+      <div class="designer-bio" style="margin-top:10px;">Currently completing the Google UX Design Professional Certificate. Believes great design is invisible — you only notice it when it's wrong.</div>
+      <div class="designer-links">
+        <div class="designer-link"><span class="designer-link-icon">◈</span>Behance Portfolio</div>
+        <div class="designer-link"><span class="designer-link-icon">◎</span>GitHub · hdiab1852000</div>
+        <div class="designer-link"><span class="designer-link-icon">→</span>Cairo, Egypt · Open to Remote</div>
+        <div class="designer-link"><span class="designer-link-icon">✦</span>Available for Junior Roles · 2025</div>
+      </div>
+    </div>
+
+    <div class="designer-right">
+      <div class="s-eyebrow" style="margin-bottom:20px;">Skills & Tools</div>
+      <div class="skills-grid">
+        <div class="skill-card">
+          <div class="skill-cat">UX Research</div>
+          <div class="skill-item"><span class="skill-name">Heuristic Eval.</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:85%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Competitive Audit</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:90%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">User Personas</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:88%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Journey Mapping</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:82%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Usability Testing</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:75%"></div></div></div>
+        </div>
+        <div class="skill-card">
+          <div class="skill-cat">UI Design</div>
+          <div class="skill-item"><span class="skill-name">Figma</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:80%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Design Systems</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:78%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Prototyping</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:85%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">HTML / CSS</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:72%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Visual Design</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:80%"></div></div></div>
+        </div>
+        <div class="skill-card">
+          <div class="skill-cat">Design Process</div>
+          <div class="skill-item"><span class="skill-name">Design Thinking</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:90%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Information Arch.</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:85%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Wireframing</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:88%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">UX Writing</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:70%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Accessibility</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:75%"></div></div></div>
+        </div>
+        <div class="skill-card">
+          <div class="skill-cat">Domain Expertise</div>
+          <div class="skill-item"><span class="skill-name">Health Tech UX</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:82%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Enterprise Dash.</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:80%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Mobile-First</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:78%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">Arabic UX</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:85%"></div></div></div>
+          <div class="skill-item"><span class="skill-name">EdTech Design</span><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:72%"></div></div></div>
+        </div>
+      </div>
+
+      <div class="s-eyebrow" style="margin-bottom:16px;margin-top:8px;">Education & Certification</div>
+      <div class="cert-card">
+        <span class="cert-icon">◈</span>
+        <div>
+          <div class="cert-title">Google UX Design Professional Certificate</div>
+          <div class="cert-meta">Coursera · In Progress · 2025 · 7-Course Program</div>
+        </div>
+      </div>
+      <div class="cert-card">
+        <span class="cert-icon">◎</span>
+        <div>
+          <div class="cert-title">Bachelor of Sharia & Law — Al-Azhar University</div>
+          <div class="cert-meta">Cairo, Egypt · Specialisation in Legal Systems & Human Rights</div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;background:var(--black-deep);border:1px solid var(--b2);border-radius:12px;padding:20px;" class="reveal-delay-3">
+        <div class="s-eyebrow" style="margin-bottom:12px;">Portfolio Projects</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--b1);">
+            <div style="width:36px;height:36px;background:var(--black);border:1px solid var(--b2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;">◈</div>
+            <div><div style="font-size:0.82rem;font-weight:500;">NEXORA</div><div style="font-family:var(--font-m);font-size:0.6rem;color:var(--gray-h);">Enterprise Business OS · 61 Screens · 12 Modules</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--b1);">
+            <div style="width:36px;height:36px;background:var(--black);border:1px solid var(--b2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;">◎</div>
+            <div><div style="font-size:0.82rem;font-weight:500;">OneraQ Care</div><div style="font-family:var(--font-m);font-size:0.6rem;color:var(--gray-h);">Medication & Care Platform · 24 Screens · Multi-role</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--b1);">
+            <div style="width:36px;height:36px;background:var(--black);border:1px solid var(--b2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;">◆</div>
+            <div><div style="font-size:0.82rem;font-weight:500;">Budgetly</div><div style="font-family:var(--font-m);font-size:0.6rem;color:var(--gray-h);">Personal Finance · MENA · InstaPay Integration</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;">
+            <div style="width:36px;height:36px;background:var(--black);border:1px solid var(--b2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;">◉</div>
+            <div><div style="font-size:0.82rem;font-weight:500;">IMDb Redesign</div><div style="font-family:var(--font-m);font-size:0.6rem;color:var(--gold);">This Case Study · Desktop + Mobile · Full UX Sprint</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     NEXT PROJECT
+══════════════════════════════════ -->
+<div class="next-project reveal">
+  <div>
+    <div class="next-label">Next Project</div>
+    <div class="next-title">Aidly —<br><em>Home Task Marketplace</em></div>
+  </div>
+  <a class="next-btn" href="#">View Case Study →</a>
+</div>
+
+<!-- ══════════════════════════════════
+     FOOTER
+══════════════════════════════════ -->
+<footer>
+  <div class="footer-brand">Hisham Diab · Junior UX/UI Designer · Cairo, Egypt</div>
+  <div class="footer-copy">IMDb Redesign Case Study · 2025 · Google UX Certificate Project</div>
+</footer>
+
+<script>
+/* ─── CURSOR ─── */
+const cur = document.getElementById('cur');
+const curR = document.getElementById('cur-r');
+let mx=0, my=0, rx=0, ry=0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cur.style.transform = `translate(${mx-4}px,${my-4}px)`;
+});
+(function tick(){
+  rx += (mx - rx - 16) * 0.1;
+  ry += (my - ry - 16) * 0.1;
+  curR.style.transform = `translate(${rx}px,${ry}px)`;
+  requestAnimationFrame(tick);
+})();
+
+/* ─── PROGRESS BAR ─── */
+window.addEventListener('scroll', () => {
+  const scrolled = window.scrollY;
+  const max = document.body.scrollHeight - window.innerHeight;
+  document.getElementById('progress').style.width = (scrolled / max * 100) + '%';
+});
+
+/* ─── NAV SCROLL ─── */
+const nav = document.getElementById('topnav');
+window.addEventListener('scroll', () => {
+  nav.style.borderBottomColor = window.scrollY > 60 ? 'rgba(242,242,242,0.08)' : 'rgba(242,242,242,0.05)';
+});
+
+/* ─── ACTIVE NAV LINKS ─── */
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-link');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 100) cur = s.id; });
+  navLinks.forEach(a => {
+    const href = a.getAttribute('href')?.replace('#','');
+    a.classList.toggle('active', href === cur);
+  });
+});
+
+/* ─── SCROLL REVEAL ─── */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ─── SKILL BARS ANIMATE ─── */
+const barObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.skill-bar-fill, .taste-fill').forEach(b => {
+        const w = b.style.width;
+        b.style.width = '0';
+        setTimeout(() => { b.style.width = w; }, 100);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('.skill-card, .taste-card').forEach(el => barObserver.observe(el));
+</script>
+</body>
+</html>
